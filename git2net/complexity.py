@@ -97,103 +97,158 @@ def _compute_halstead_effort(filename, source_code):
     return HE
 
 
-def _compute_complexity_measures(args):
+def _compute_measures(extra_eval_methods=[]):
     """
     Computes a set of complexity measures for a given commit/file combination.
     
-    :param dict args: dictionary with the following key/value pairs:
-        * **git_repo_dir** (*str*) – path to the git repository that is analysed
-        * **commit_hash** (*str*) – hash of the commit that is processed
-        * **old_path** (*str*) – path to the analysed file before the commit
-        * **new_path** (*str*) – path to the analysed file after the commit
-        * **events** (*int*) – number of edit events in the commit/file pair
-        * **levenshtein_distance** (*int*) – total Levenshtein distance in the commit/file pair
+    :param list extra_eval_methods: a list with user-provided functions (**that have to be callable**).
+        These user-provided functions have to be both callable, and return a dictionary to be merged with 
+        the overall return dataframe.
+
+        ex:
+            ```python
+            def create_metric():
+                def custom_metric(filename, source_code):
+                    output = {"Metric_One":0}
+                    if (filename != None and source_code != None) and filename.endswith(".py"):
+                        lines = source_code.replace("\r\n","\n").replace("\r","\n").split('\n')
+                        for line in lines:
+                            if "import" in line.lower():
+                                output['Metric_One'] += 1
+                    return output
+
+
+                def custom_metric_diff(latest, previous):
+                    return latest - previous
+                setattr(custom_metric, 'diff', custom_metric_diff)
+
+                return custom_metric
+            ```
     
     :return:
-        *pandas.DataFrame* – dataframe containing identifying information and the computed
-            complexity for the commit/file combination.
+        **_compute_complexity_measures** (*func*) – The main function that
+            computes the complexity measurements for a given commit/file combination.
     """
-    
-    filename_old = args['old_path'].split('/')[-1]
-    filename_new = args['new_path'].split('/')[-1]
-    if filename_new != 'None':
-        filename = filename_new
-    else:
-        filename = filename_old
-    
-    result = {'commit_hash': args['commit_hash'],
-              'old_path': args['old_path'],
-              'new_path': args['new_path'],
-              'events': args['events'],
-              'levenshtein_distance': args['levenshtein_distance'],
-              'HE_pre': None,
-              'CCN_pre': None,
-              'NLOC_pre': None,
-              'TOK_pre': None,
-              'FUN_pre': None,
-              'HE_post': None,
-              'CCN_post': None,
-              'NLOC_post': None,
-              'TOK_post': None,
-              'FUN_post': None,
-              'HE_delta': None,
-              'CCN_delta': None,
-              'NLOC_delta': None,
-              'TOK_delta': None,
-              'FUN_delta': None}
-    
-    with git_init_lock:
-        pydriller_repo = pydriller.Git(args['git_repo_dir'])
-        pydriller_commit = pydriller_repo.get_commit(args['commit_hash'])
-        
-    found = False
-    for m in pydriller_commit.modified_files:
-        if m.filename == filename:
-            found = True
-            break
-    
-    if found:
-        if pd.notnull(m.source_code_before):
-            result['HE_pre'] = _compute_halstead_effort(m.old_path, m.source_code_before)
-            l_before = lizard.analyze_file.analyze_source_code(m.old_path, m.source_code_before)
-            result['CCN_pre'] = l_before.CCN
-            result['NLOC_pre'] = l_before.nloc
-            result['TOK_pre'] = l_before.token_count
-            result['FUN_pre'] = len(l_before.function_list)
-        else: 
-            result['HE_pre'] = 0
-            result['CCN_pre'] = 0
-            result['NLOC_pre'] = 0
-            result['TOK_pre'] = 0
-            result['FUN_pre'] = 0
-                
-        if pd.notnull(m.source_code):
-            result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
-            l_after = lizard.analyze_file.analyze_source_code(m.new_path, m.source_code)
-            result['CCN_post'] = l_after.CCN
-            result['NLOC_post'] = l_after.nloc
-            result['TOK_post'] = l_after.token_count
-            result['FUN_post'] = len(l_after.function_list)
-        else: 
-            result['HE_post'] = 0
-            result['CCN_post'] = 0
-            result['NLOC_post'] = 0
-            result['TOK_post'] = 0
-            result['FUN_post'] = 0
-    
-    result['HE_delta'] = result['HE_post'] - result['HE_pre']
-    result['CCN_delta'] = result['CCN_post'] - result['CCN_pre']
-    result['NLOC_delta'] = result['NLOC_post'] - result['NLOC_pre']
-    result['TOK_delta'] = result['TOK_post'] - result['TOK_pre']
-    result['FUN_delta'] = result['FUN_post'] - result['FUN_pre']
-    
-    result_df = pd.DataFrame(result, index=[0])
-        
-    return result_df
 
+    def _compute_complexity_measures(args):
+        """
+        Computes a set of complexity measures for a given commit/file combination.
+        
+        :param dict args: dictionary with the following key/value pairs:
+            * **git_repo_dir** (*str*) – path to the git repository that is analysed
+            * **commit_hash** (*str*) – hash of the commit that is processed
+            * **old_path** (*str*) – path to the analysed file before the commit
+            * **new_path** (*str*) – path to the analysed file after the commit
+            * **events** (*int*) – number of edit events in the commit/file pair
+            * **levenshtein_distance** (*int*) – total Levenshtein distance in the commit/file pair
+        
+        :return:
+            *pandas.DataFrame* – dataframe containing identifying information and the computed
+                complexity for the commit/file combination.
+        """
+        
+        filename_old = args['old_path'].split('/')[-1]
+        filename_new = args['new_path'].split('/')[-1]
+        if filename_new != 'None':
+            filename = filename_new
+        else:
+            filename = filename_old
+        
+        result = {'commit_hash': args['commit_hash'],
+                'old_path': args['old_path'],
+                'new_path': args['new_path'],
+                'events': args['events'],
+                'levenshtein_distance': args['levenshtein_distance'],
+                'HE_pre': None,
+                'CCN_pre': None,
+                'NLOC_pre': None,
+                'TOK_pre': None,
+                'FUN_pre': None,
+                'HE_post': None,
+                'CCN_post': None,
+                'NLOC_post': None,
+                'TOK_post': None,
+                'FUN_post': None,
+                'HE_delta': None,
+                'CCN_delta': None,
+                'NLOC_delta': None,
+                'TOK_delta': None,
+                'FUN_delta': None}
+        
+        with git_init_lock:
+            pydriller_repo = pydriller.Git(args['git_repo_dir'])
+            pydriller_commit = pydriller_repo.get_commit(args['commit_hash'])
+            
+        found = False
+        for m in pydriller_commit.modified_files:
+            if m.filename == filename:
+                found = True
+                break
+        
+        if found:
+            if pd.notnull(m.source_code_before):
+                result['HE_pre'] = _compute_halstead_effort(m.old_path, m.source_code_before)
+                l_before = lizard.analyze_file.analyze_source_code(m.old_path, m.source_code_before)
+                result['CCN_pre'] = l_before.CCN
+                result['NLOC_pre'] = l_before.nloc
+                result['TOK_pre'] = l_before.token_count
+                result['FUN_pre'] = len(l_before.function_list)
+
+                for extra_eval_method in extra_eval_methods:
+                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(m.old_path, m.source_code_before).items():
+                        result["_{0}_pre".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+            else: 
+                result['HE_pre'] = 0
+                result['CCN_pre'] = 0
+                result['NLOC_pre'] = 0
+                result['TOK_pre'] = 0
+                result['FUN_pre'] = 0
+
+                for extra_eval_method in extra_eval_methods:
+                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(None, None).items():
+                        result["_{0}_pre".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+                    
+            if pd.notnull(m.source_code):
+                result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
+                l_after = lizard.analyze_file.analyze_source_code(m.new_path, m.source_code)
+                result['CCN_post'] = l_after.CCN
+                result['NLOC_post'] = l_after.nloc
+                result['TOK_post'] = l_after.token_count
+                result['FUN_post'] = len(l_after.function_list)
+
+                for extra_eval_method in extra_eval_methods:
+                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(m.new_path, m.source_code).items():
+                        result["_{0}_post".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+            else: 
+                result['HE_post'] = 0
+                result['CCN_post'] = 0
+                result['NLOC_post'] = 0
+                result['TOK_post'] = 0
+                result['FUN_post'] = 0
+
+                for extra_eval_method in extra_eval_methods:
+                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(None, None).items():
+                        result["_{0}_post".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+        
+        result['HE_delta'] = result['HE_post'] - result['HE_pre']
+        result['CCN_delta'] = result['CCN_post'] - result['CCN_pre']
+        result['NLOC_delta'] = result['NLOC_post'] - result['NLOC_pre']
+        result['TOK_delta'] = result['TOK_post'] - result['TOK_pre']
+        result['FUN_delta'] = result['FUN_post'] - result['FUN_pre']
+
+        for extra_eval_method in extra_eval_methods:
+            if hasattr(extra_eval_method,'diff'):
+                result["_{0}_delta".format(extra_eval_method_result_key)] = getattr(extra_eval_method, 'diff')(
+                    result["_{0}_post".format(extra_eval_method_result_key)], result["_{0}_pre".format(extra_eval_method_result_key)]
+                )
+        
+        result_df = pd.DataFrame(result, index=[0])
+            
+        return result_df
+    return _compute_complexity_measures
 
 def compute_complexity(git_repo_dir, sqlite_db_file, no_of_processes=os.cpu_count(), read_chunksize = 1e6,
-                       write_chunksize = 100):
+                       write_chunksize = 100, extra_eval_methods = []):
     """
     Computes complexity measures for all mined commit/file combinations in a given database. Computing
     complexities for merge commits is currently not supported.
@@ -203,6 +258,7 @@ def compute_complexity(git_repo_dir, sqlite_db_file, no_of_processes=os.cpu_coun
     :param str no_of_processes: number of parallel processes that are spawned
     :param str read_chunksize: number of commit/file combinations that are processed at once
     :param str write_chunksize: number of commit/file combinations for which complexities are written at once
+    :param list[functions] extra_eval_methods: callable functions that provide extra metrics per commit/file
     
     :return:
         adds table `complexity` containing computed complexity measures for all commit/file combinations.
@@ -289,12 +345,15 @@ def compute_complexity(git_repo_dir, sqlite_db_file, no_of_processes=os.cpu_coun
         global git_init_lock
         git_init_lock = git_init_lock_
       
-    
+    # Creating the _compute_complexity_measures method with the extra evaluation methods provided
+    # Done this way in order to stay consistent with the original flow of the program
+    _compute_complexity_measures_caller = _compute_measures(extra_eval_methods=extra_eval_methods)
+
     with multiprocessing.Pool(no_of_processes, initializer=_init,
                               initargs=(git_repo_dir,git_init_lock)) as p:
         results = []
         with tqdm(total=len(args_pool), desc='complexity computation') as pbar:
-            for result in p.imap_unordered(_compute_complexity_measures, args_pool, chunksize=1):
+            for result in p.imap_unordered(_compute_complexity_measures_caller, args_pool, chunksize=1):
                 results.append(result)
                 
                 # We write the results to the database. If results are already present, we append
