@@ -185,6 +185,11 @@ def _compute_measures(extra_eval_methods=[]):
                 found = True
                 break
         
+        def set_metrics(prefix:str,path:str=None,source_code:str=None):
+            for extra_eval_method in extra_eval_methods:
+                for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method.metrics(path, source_code).items():
+                    result["_{0}_{1}".format(extra_eval_method_result_key,prefix)] = extra_eval_method_result_value
+
         if found:
             if pd.notnull(m.source_code_before):
                 result['HE_pre'] = _compute_halstead_effort(m.old_path, m.source_code_before)
@@ -193,20 +198,14 @@ def _compute_measures(extra_eval_methods=[]):
                 result['NLOC_pre'] = l_before.nloc
                 result['TOK_pre'] = l_before.token_count
                 result['FUN_pre'] = len(l_before.function_list)
-
-                for extra_eval_method in extra_eval_methods:
-                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(m.old_path, m.source_code_before).items():
-                        result["_{0}_pre".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+                set_metrics("pre",m.old_path, m.source_code_before)
             else: 
                 result['HE_pre'] = 0
                 result['CCN_pre'] = 0
                 result['NLOC_pre'] = 0
                 result['TOK_pre'] = 0
                 result['FUN_pre'] = 0
-
-                for extra_eval_method in extra_eval_methods:
-                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(None, None).items():
-                        result["_{0}_pre".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+                set_metrics("pre")
                     
             if pd.notnull(m.source_code):
                 result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
@@ -215,20 +214,14 @@ def _compute_measures(extra_eval_methods=[]):
                 result['NLOC_post'] = l_after.nloc
                 result['TOK_post'] = l_after.token_count
                 result['FUN_post'] = len(l_after.function_list)
-
-                for extra_eval_method in extra_eval_methods:
-                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(m.new_path, m.source_code).items():
-                        result["_{0}_post".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+                set_metrics("post",m.new_path, m.source_code)
             else: 
                 result['HE_post'] = 0
                 result['CCN_post'] = 0
                 result['NLOC_post'] = 0
                 result['TOK_post'] = 0
                 result['FUN_post'] = 0
-
-                for extra_eval_method in extra_eval_methods:
-                    for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method(None, None).items():
-                        result["_{0}_post".format(extra_eval_method_result_key)] = extra_eval_method_result_value
+                set_metrics("post")
         
         result['HE_delta'] = result['HE_post'] - result['HE_pre']
         result['CCN_delta'] = result['CCN_post'] - result['CCN_pre']
