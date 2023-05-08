@@ -191,12 +191,20 @@ def _compute_measures(extra_eval_methods=[]):
 
         if found:
             if pd.notnull(m.source_code_before):
-                result['HE_pre'] = _compute_halstead_effort(m.old_path, m.source_code_before)
-                l_before = lizard.analyze_file.analyze_source_code(m.old_path, m.source_code_before)
-                result['CCN_pre'] = l_before.CCN
-                result['NLOC_pre'] = l_before.nloc
-                result['TOK_pre'] = l_before.token_count
-                result['FUN_pre'] = len(l_before.function_list)
+                try:
+                    result['HE_pre'] = _compute_halstead_effort(m.old_path, m.source_code_before)
+                except:
+                    pass
+
+                try:
+                    l_before = lizard.analyze_file.analyze_source_code(m.old_path, m.source_code_before)
+                    result['CCN_pre'] = l_before.CCN
+                    result['NLOC_pre'] = l_before.nloc
+                    result['TOK_pre'] = l_before.token_count
+                    result['FUN_pre'] = len(l_before.function_list)
+                except:
+                    pass
+
                 set_metrics("pre", m.old_path, m.source_code_before)
             else: 
                 result['HE_pre'] = 0
@@ -207,12 +215,20 @@ def _compute_measures(extra_eval_methods=[]):
                 set_metrics("pre")
 
             if pd.notnull(m.source_code):
-                result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
-                l_after = lizard.analyze_file.analyze_source_code(m.new_path, m.source_code)
-                result['CCN_post'] = l_after.CCN
-                result['NLOC_post'] = l_after.nloc
-                result['TOK_post'] = l_after.token_count
-                result['FUN_post'] = len(l_after.function_list)
+                try:
+                    result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
+                except:
+                    pass
+
+                try:
+                    l_after = lizard.analyze_file.analyze_source_code(m.new_path, m.source_code)
+                    result['CCN_post'] = l_after.CCN
+                    result['NLOC_post'] = l_after.nloc
+                    result['TOK_post'] = l_after.token_count
+                    result['FUN_post'] = len(l_after.function_list)
+                except:
+                    pass
+
                 set_metrics("post", m.new_path, m.source_code)
             else: 
                 result['HE_post'] = 0
@@ -222,11 +238,26 @@ def _compute_measures(extra_eval_methods=[]):
                 result['FUN_post'] = 0
                 set_metrics("post")
         
-        result['HE_delta'] = result['HE_post'] - result['HE_pre']
-        result['CCN_delta'] = result['CCN_post'] - result['CCN_pre']
-        result['NLOC_delta'] = result['NLOC_post'] - result['NLOC_pre']
-        result['TOK_delta'] = result['TOK_post'] - result['TOK_pre']
-        result['FUN_delta'] = result['FUN_post'] - result['FUN_pre']
+        try:
+            result['HE_delta'] = result['HE_post'] - result['HE_pre']  
+        except:
+            pass
+        try:
+            result['CCN_delta'] = result['CCN_post'] - result['CCN_pre']  
+        except:
+            pass
+        try:
+            result['NLOC_delta'] = result['NLOC_post'] - result['NLOC_pre']  
+        except:
+            pass
+        try:
+            result['TOK_delta'] = result['TOK_post'] - result['TOK_pre']  
+        except:
+            pass
+        try:
+            result['FUN_delta'] = result['FUN_post'] - result['FUN_pre']  
+        except:
+            pass
 
         for extra_eval_method in extra_eval_methods:
             if hasattr(extra_eval_method,'diff'):
