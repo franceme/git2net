@@ -349,11 +349,11 @@ def compute_complexity(git_repo_dir, sqlite_db_file, no_of_processes=os.cpu_coun
     # Done this way in order to stay consistent with the original flow of the program
     _compute_complexity_measures_caller = _compute_measures(extra_eval_methods=extra_eval_methods)
 
-    with multiprocessing.Pool(no_of_processes, initializer=_init,
-                              initargs=(git_repo_dir,git_init_lock)) as p:
+    if no_of_processes == 1:
         results = []
         with tqdm(total=len(args_pool), desc='complexity computation') as pbar:
-            for result in p.imap_unordered(_compute_complexity_measures_caller, args_pool, chunksize=1):
+            for args_gallon in args_pool:
+                result = _compute_complexity_measures_caller(args_gallon)
                 results.append(result)
                 
                 # We write the results to the database. If results are already present, we append
@@ -361,19 +361,47 @@ def compute_complexity(git_repo_dir, sqlite_db_file, no_of_processes=os.cpu_coun
                 if len(results) >= write_chunksize:
                     results = pd.concat(results, axis=0, copy=False)
                     
-                    results = results[['commit_hash', 'old_path', 'new_path',
-                                       'events', 'levenshtein_distance',
-                                       'HE_pre', 'HE_post', 'HE_delta',
-                                       'CCN_pre', 'CCN_post', 'CCN_delta',
-                                       'NLOC_pre', 'NLOC_post', 'NLOC_delta',
-                                       'TOK_pre', 'TOK_post', 'TOK_delta',
-                                       'FUN_pre', 'FUN_post', 'FUN_delta']]
+                    if False:
+                        results = results[['commit_hash', 'old_path', 'new_path',
+                                        'events', 'levenshtein_distance',
+                                        'HE_pre', 'HE_post', 'HE_delta',
+                                        'CCN_pre', 'CCN_post', 'CCN_delta',
+                                        'NLOC_pre', 'NLOC_post', 'NLOC_delta',
+                                        'TOK_pre', 'TOK_post', 'TOK_delta',
+                                        'FUN_pre', 'FUN_post', 'FUN_delta']]
                     
                     with sqlite3.connect(sqlite_db_file) as con:
                         results.to_sql('complexity', con, if_exists='append', index=False)
                     results=[]
 
                 pbar.update(1)
+    else:
+        with multiprocessing.Pool(no_of_processes, initializer=_init,
+                                initargs=(git_repo_dir,git_init_lock)) as p:
+            results = []
+            with tqdm(total=len(args_pool), desc='complexity computation') as pbar:
+                for result in p.imap_unordered(_compute_complexity_measures_caller, args_pool, chunksize=1):
+                    results.append(result)
+                    
+                    # We write the results to the database. If results are already present, we append
+                    # the new results to them.
+                    if len(results) >= write_chunksize:
+                        results = pd.concat(results, axis=0, copy=False)
+                        
+                        if False:
+                            results = results[['commit_hash', 'old_path', 'new_path',
+                                            'events', 'levenshtein_distance',
+                                            'HE_pre', 'HE_post', 'HE_delta',
+                                            'CCN_pre', 'CCN_post', 'CCN_delta',
+                                            'NLOC_pre', 'NLOC_post', 'NLOC_delta',
+                                            'TOK_pre', 'TOK_post', 'TOK_delta',
+                                            'FUN_pre', 'FUN_post', 'FUN_delta']]
+                        
+                        with sqlite3.connect(sqlite_db_file) as con:
+                            results.to_sql('complexity', con, if_exists='append', index=False)
+                        results=[]
+
+                    pbar.update(1)
                 
     
     # As we write the results in chunks, some might remain unwritten in the loop above. We write
