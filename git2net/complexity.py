@@ -146,14 +146,14 @@ def _compute_measures(extra_eval_methods=[]):
             *pandas.DataFrame* – dataframe containing identifying information and the computed
                 complexity for the commit/file combination.
         """
-        
+
         filename_old = args['old_path'].split('/')[-1]
         filename_new = args['new_path'].split('/')[-1]
         if filename_new != 'None':
             filename = filename_new
         else:
             filename = filename_old
-        
+
         result = {'commit_hash': args['commit_hash'],
                 'old_path': args['old_path'],
                 'new_path': args['new_path'],
@@ -174,21 +174,20 @@ def _compute_measures(extra_eval_methods=[]):
                 'NLOC_delta': None,
                 'TOK_delta': None,
                 'FUN_delta': None}
-        
+
         with git_init_lock:
             pydriller_repo = pydriller.Git(args['git_repo_dir'])
             pydriller_commit = pydriller_repo.get_commit(args['commit_hash'])
-            
+
         found = False
         for m in pydriller_commit.modified_files:
             if m.filename == filename:
                 found = True
                 break
-        
+
         def set_metrics(prefix:str,path:str=None,source_code:str=None):
             for extra_eval_method in extra_eval_methods:
-                for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method.metric(path, source_code).items():
-                    result["_{0}_{1}".format(extra_eval_method_result_key,prefix)] = extra_eval_method_result_value
+                result["_{0}_{1}".format(extra_eval_method.name(), prefix)] = extra_eval_method.metric(path, source_code)
 
         if found:
             if pd.notnull(m.source_code_before):
@@ -198,7 +197,7 @@ def _compute_measures(extra_eval_methods=[]):
                 result['NLOC_pre'] = l_before.nloc
                 result['TOK_pre'] = l_before.token_count
                 result['FUN_pre'] = len(l_before.function_list)
-                set_metrics("pre",m.old_path, m.source_code_before)
+                set_metrics("pre", m.old_path, m.source_code_before)
             else: 
                 result['HE_pre'] = 0
                 result['CCN_pre'] = 0
@@ -206,7 +205,7 @@ def _compute_measures(extra_eval_methods=[]):
                 result['TOK_pre'] = 0
                 result['FUN_pre'] = 0
                 set_metrics("pre")
-                    
+
             if pd.notnull(m.source_code):
                 result['HE_post'] = _compute_halstead_effort(m.new_path, m.source_code)
                 l_after = lizard.analyze_file.analyze_source_code(m.new_path, m.source_code)
@@ -214,7 +213,7 @@ def _compute_measures(extra_eval_methods=[]):
                 result['NLOC_post'] = l_after.nloc
                 result['TOK_post'] = l_after.token_count
                 result['FUN_post'] = len(l_after.function_list)
-                set_metrics("post",m.new_path, m.source_code)
+                set_metrics("post", m.new_path, m.source_code)
             else: 
                 result['HE_post'] = 0
                 result['CCN_post'] = 0
@@ -231,8 +230,8 @@ def _compute_measures(extra_eval_methods=[]):
 
         for extra_eval_method in extra_eval_methods:
             if hasattr(extra_eval_method,'diff'):
-                result["_{0}_delta".format(extra_eval_method_result_key)] = getattr(extra_eval_method, 'diff')(
-                    result["_{0}_post".format(extra_eval_method_result_key)], result["_{0}_pre".format(extra_eval_method_result_key)]
+                result["_{0}_delta".format(extra_eval_method.name())] = getattr(extra_eval_method, 'diff')(
+                    result["_{0}_post".format(extra_eval_method.name())], result["_{0}_pre".format(extra_eval_method.name())]
                 )
         
         result_df = pd.DataFrame(result, index=[0])
