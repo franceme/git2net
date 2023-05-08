@@ -187,7 +187,7 @@ def _compute_measures(extra_eval_methods=[]):
         
         def set_metrics(prefix:str,path:str=None,source_code:str=None):
             for extra_eval_method in extra_eval_methods:
-                for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method.metrics(path, source_code).items():
+                for extra_eval_method_result_key, extra_eval_method_result_value in extra_eval_method.metric(path, source_code).items():
                     result["_{0}_{1}".format(extra_eval_method_result_key,prefix)] = extra_eval_method_result_value
 
         if found:
