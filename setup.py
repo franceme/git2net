@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # region Imports
 import pathlib, zipfile
 from fileinput import FileInput as finput
