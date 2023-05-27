@@ -13,7 +13,7 @@ import datetime
 
 
 def main():
-    parser = argparse.ArgumentParser(description=("Allows git2net to be used "
+    parser = argparse.ArgumentParser(description=("Allows git4net to be used "
                                                   "from the command line."))
 
     subparsers = parser.add_subparsers(dest='command',
@@ -41,7 +41,7 @@ def main():
                                                "provided SQLite database. The "
                                                "database needs to be created "
                                                "using the 'mine' command in "
-                                               "git2net. Graphs will be output "
+                                               "git4net. Graphs will be output "
                                                "as csv files at the given "
                                                "path."))
 
@@ -171,7 +171,7 @@ def main():
     for sp in graph_priojections:
         sp.add_argument('database',
                         help=("Path to the database previously mined with "
-                              "git2net."),
+                              "git4net."),
                         type=str)
         sp.add_argument('csvfile',
                         help=("Path where the resulting graph will be stored "

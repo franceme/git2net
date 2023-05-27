@@ -10,7 +10,7 @@ from subprocess import check_output
 
 import multiprocessing
 
-import pandas as pd
+import pandas as pdlizard
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 import numpy as np
@@ -27,7 +27,7 @@ import collections
 import git
 from git.exc import GitCommandError
 
-from git2net import __version__
+from git4net import __version__
 
 import time
 import sys
@@ -600,7 +600,7 @@ def _get_edit_details(edit, commit, deleted_lines, added_lines,
         e['levenshtein_dist'] = 0
 
     else:
-        LOG = logging.getLogger('git2net')
+        LOG = logging.getLogger('git4net')
         LOG.error(edit.type)
         raise Exception("Unexpected error in '_get_edit_details'.")
 
@@ -1098,7 +1098,7 @@ def _check_mailmap(name, email, git_repo):
     matches = re.findall("^(.*) <(.*)>$", out_str)
     if len(matches) > 1:
         raise Exception(("Error in mailmap check. Please report on "
-                         "https://github.com/gotec/git2net."))
+                         "https://github.com/gotec/git4net."))
     elif len(matches) == 1:
         name, email = matches[0]
     # else name and email remain the same as the ones passed
@@ -1273,7 +1273,7 @@ def _process_commit(args):
             # it is just a notification that an exception was ignored while deleting an object
             # after the threading timeout triggered. In this case, we ignore the message.
             if not (redirected_stderr.startswith('Exception ignored in:') and \
-                    redirected_stderr.endswith('git2net.extraction.TimeoutException:')):
+                    redirected_stderr.endswith('git4net.extraction.TimeoutException:')):
                 extracted_result = {'commit': pd.DataFrame(), 'edits': pd.DataFrame()}
                 log = ('error', 'processing error: ' + commit.hash)
                 exception = redirected_stderr
@@ -1298,7 +1298,7 @@ def _log_commit_results(log, exception):
         log message will be written and exception raised if one occurred
     """
     
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
 
     if pd.notnull(log):
         if log[0] == 'warning':
@@ -1308,7 +1308,7 @@ def _log_commit_results(log, exception):
             raise Exception(exception)
         else:
             Exception(("Not implemented logging type. Please report on "
-                       "https://github.com/gotec/git2net."))
+                       "https://github.com/gotec/git4net."))
 
             
 def _process_repo_serial(git_repo_dir, sqlite_db_file, commits,
@@ -1325,7 +1325,7 @@ def _process_repo_serial(git_repo_dir, sqlite_db_file, commits,
         SQLite database will be written at specified location
     """
 
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     for commit in tqdm(commits, desc='Serial'):
         with logging_redirect_tqdm(tqdm_class=tqdm):            
@@ -1368,7 +1368,7 @@ def _process_repo_parallel(git_repo_dir, sqlite_db_file, commits,
         SQLite database will be written at specified location
     """
 
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     args = [{'git_repo_dir': git_repo_dir, 'commit_hash': commit.hash,
              'extraction_settings': extraction_settings}
@@ -1528,7 +1528,7 @@ def check_mining_complete(git_repo_dir, sqlite_db_file, commits=[],
     :return:
         *bool* – True if all commits are included in the database, otherwise False
     """
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     git_repo = pydriller.Git(git_repo_dir)
     if os.path.exists(sqlite_db_file):
@@ -1571,7 +1571,7 @@ def mining_state_summary(git_repo_dir, sqlite_db_file, all_branches=False):
     :return:
         *pandas.DataFrame* – dataframe with details on missing commits
     """
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     git_repo = pydriller.Git(git_repo_dir)
     if os.path.exists(sqlite_db_file):
@@ -1594,7 +1594,7 @@ def mining_state_summary(git_repo_dir, sqlite_db_file, all_branches=False):
         raise Exception("The database does not match the provided repository.")
 
     no_of_commits = len({c.hash for c in commits})
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     LOG.info('{} / {} ({:.2f}%) of commits were successfully mined.'.format(
         len(p_commits), no_of_commits,
         len(p_commits) / no_of_commits * 100))
@@ -1675,7 +1675,7 @@ def mine_git_repo(git_repo_dir, sqlite_db_file, commits=[],
     :return:
         SQLite database will be written at specified location
     """
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     git_version = check_output(['git', '--version']).strip().decode("utf-8")
 
@@ -1693,7 +1693,7 @@ def mine_git_repo(git_repo_dir, sqlite_db_file, commits=[],
             (int(parsed_git_version[2]) == 0)
        ):
         raise Exception("Your system is using " + git_version +
-                        " which is not supported by git2net. " +
+                        " which is not supported by git4net. " +
                         " Please update to git >= 2.11.1")
 
     blame_options = _parse_blame_C(blame_C) + ['--show-number',
@@ -1771,7 +1771,7 @@ def mine_git_repo(git_repo_dir, sqlite_db_file, commits=[],
                                      "identical settings is required."))
         except sqlite3.OperationalError:
             raise Exception(("Found a database on provided path that was "
-                             "likely not created with git2net. A path to "
+                             "likely not created with git4net. A path to "
                              "either no database or a database from a "
                              "previously paused run with identical settings "
                              "is required."))
@@ -1798,7 +1798,7 @@ def mine_git_repo(git_repo_dir, sqlite_db_file, commits=[],
                                 :date,
                                 :method,
                                 :extract_text)""",
-                        {'version': 'git2net ' + str(__version__),
+                        {'version': 'git4net ' + str(__version__),
                          'repository': repo_url,
                          'date': datetime.datetime.now()
                                          .strftime('%Y-%m-%d %H:%M:%S'),
@@ -1872,7 +1872,7 @@ def mine_github(github_url, git_repo_dir, sqlite_db_file, branch=None,
         - git repository will be cloned to specified location
         - SQLite database will be written at specified location
     """
-    LOG = logging.getLogger('git2net')    
+    LOG = logging.getLogger('git4net')    
     
     # github_url can either be provided as full url or as in form <USER>/<REPO>
     user_repo_pattern = r'^([^\/]*)\/([^\/]*)$'

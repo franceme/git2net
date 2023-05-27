@@ -7,7 +7,7 @@ from pkg_resources import get_distribution
 
 __author__ = "Christoph Gote"
 __email__ = "cgote@ethz.ch"
-__version__ = get_distribution('git2net').version
+__version__ = get_distribution('git4net').version
 
 from .extraction import mine_git_repo
 from .extraction import mine_github

@@ -16,11 +16,11 @@ from pkg_resources import get_distribution
 sys.path.insert(0, os.path.abspath('../../'))
 package_path = os.path.abspath('../..')
 os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
-__version__ = get_distribution('git2net').version
+__version__ = get_distribution('git4net').version
 
 # -- Project information -----------------------------------------------------
 
-project = 'git2net'
+project = 'git4net'
 copyright = '2022, Christoph Gote'
 author = 'Christoph Gote'
 

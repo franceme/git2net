@@ -24,10 +24,10 @@ def _ensure_author_id_exists(sqlite_db_file):
         cols = [i[1] for i in cur.execute('PRAGMA table_info(commits)')]
         if 'author_id' not in cols:
             raise Exception("The author_id is not yet computed. To use author_id as identifier, please " + 
-                            "run git2net.disambiguate_aliases_db on the database before visualisation.")
+                            "run git4net.disambiguate_aliases_db on the database before visualisation.")
         elif pd.isnull(pd.read_sql('''SELECT author_id FROM commits''', con).author_id).sum() > 0:
             raise Exception("The author_id is missing entries. To use author_id as identifier, please " + 
-                            "rerun git2net.disambiguate_aliases_db on the database before visualisation.")
+                            "rerun git4net.disambiguate_aliases_db on the database before visualisation.")
     return True
                 
 def get_line_editing_paths(sqlite_db_file, git_repo_dir, author_identifier='author_id', commit_hashes=None,
@@ -35,7 +35,7 @@ def get_line_editing_paths(sqlite_db_file, git_repo_dir, author_identifier='auth
     """
     Returns line editing DAG as well as line editing paths.
 
-    :param str sqlite_db_file: path to SQLite database mined with git2net line method
+    :param str sqlite_db_file: path to SQLite database mined with git4net line method
     :param str git_repo_dir: path to the git repository that is mined
     :param List[str] commit_hashes: list of commits to consider, by default all commits are considered
     :param List[str] file_paths: list of files to consider, by default all files are considered
@@ -49,7 +49,7 @@ def get_line_editing_paths(sqlite_db_file, git_repo_dir, author_identifier='auth
         - *dict* – info on edge characteristics
     """
 
-    LOG = logging.getLogger('git2net')
+    LOG = logging.getLogger('git4net')
     
     if author_identifier == 'author_id':
         _ensure_author_id_exists(sqlite_db_file)
@@ -65,7 +65,7 @@ def get_line_editing_paths(sqlite_db_file, git_repo_dir, author_identifier='auth
             raise Exception("Invalid database. A database mined with 'use_blocks=False' is " +
                             "required.")
     except sqlite3.OperationalError:
-        raise Exception("You either provided no database or a database not created with git2net. " +
+        raise Exception("You either provided no database or a database not created with git4net. " +
                         "Please provide a valid datatabase mined with 'use_blocks=False'.")
 
     if file_paths is not None:
@@ -230,7 +230,7 @@ def get_line_editing_paths(sqlite_db_file, git_repo_dir, author_identifier='auth
             else:
                 raise Exception("Unexpected error in 'extract_editing_paths' ({})."
                                     .format(edit.edit_type) + " Please report on " +
-                                "https://github.com/gotec/git2net.")
+                                "https://github.com/gotec/git4net.")
 
     for node in tqdm(dag.nodes):
         if node in file_paths_dag:

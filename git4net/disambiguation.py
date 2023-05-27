@@ -5,7 +5,7 @@ import pandas as pd
 
 def disambiguate_aliases_db(sqlite_db_file, method='gambit', **quargs):
     """
-    Disambiguates author aliases in a given SQLite database mined with `git2net`.
+    Disambiguates author aliases in a given SQLite database mined with `git4net`.
     The disambiguation is performed using the Python package `gambit`.
     Internally, `disambiguate_aliases_db` calls the function `gambit.disambiguate_aliases <https://github.com/gotec/gambit/blob/main/gambit/main.py>`_.
     
