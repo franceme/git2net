@@ -128,6 +128,17 @@ def _compute_measures(extra_eval_methods=[]):
     :return:
         **_compute_complexity_measures** (*func*) – The main function that
             computes the complexity measurements for a given commit/file combination.
+
+    example:
+    class FileContents(GRepo_Seed_Metric[str]):
+        def name(self):
+            return "FileContents"
+
+        def metric(self, filename: str, source_code: str):
+            return mystring.string(source_code).tobase64()
+
+        def diff(self, latest, previous):
+            return None
     """
 
     def _compute_complexity_measures(args):
