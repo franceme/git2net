@@ -28,7 +28,7 @@ import git
 from git.exc import GitCommandError
 
 __version__ = "0.0.0"
-
+import pandas as pd
 import time
 import sys
 
