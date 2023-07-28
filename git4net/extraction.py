@@ -27,7 +27,7 @@ import collections
 import git
 from git.exc import GitCommandError
 
-from git4net import __version__
+__version__ = "0.0.0"
 
 import time
 import sys
